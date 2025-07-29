@@ -70,7 +70,7 @@ def view():
     return data
 
 @app.get('/patient/{patient_id}')
-def view_patient(patient_id: str = Path(..., description='ID of the patient in the DB', example='P001')):
+def view_patient(patient_id: str = Path(..., description='ID of the patient in the DB', examples='P001')):
     # load all the patients
     data = load_data()
 
@@ -126,12 +126,20 @@ def update_patient(patient_id: str, patient_update: PatientUpdate):
     
     existing_patient_info = data[patient_id]
 
+    # this step allows only the edited values to get into the dictionary made in this step, if this was not used, then all the values would have been in dictionary even those which were not updated by the user and so null values would have come for non-updated values.
+    # now the dictionary created will only have the values updated by user
     updated_patient_info = patient_update.model_dump(exclude_unset=True)
 
+
+    # for key (city), value(mumbai) in updated_patient_info.items():
+    # this means we are looping in updated info but making changes in existing info
     for key, value in updated_patient_info.items():
         existing_patient_info[key] = value
+        # old value was bangalore in value which is replaced by mumbai in updated info
 
     #existing_patient_info -> pydantic object -> updated bmi + verdict
+    # here these steps are done bcoz if users update weight or height then computed values like bmi and verdict would also change
+    # so all these manipulations are done to get the computed values recalculated and get included in updated patient info
     existing_patient_info['id'] = patient_id
     patient_pydandic_obj = Patient(**existing_patient_info)
     #-> pydantic object -> dict
@@ -148,7 +156,6 @@ def update_patient(patient_id: str, patient_update: PatientUpdate):
 @app.delete('/delete/{patient_id}')
 def delete_patient(patient_id: str):
 
-    # load data
     data = load_data()
 
     if patient_id not in data:
